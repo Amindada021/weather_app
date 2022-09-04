@@ -38,6 +38,7 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: AppBar(),
@@ -90,13 +91,9 @@ class _MyAppState extends State<MyApp> {
                           style: TextStyle(color: Colors.grey),
                         ),
                       ),
-                      const Padding(
+                       Padding(
                         padding: EdgeInsets.only(top: 30),
-                        child: Icon(
-                          Icons.wb_sunny_outlined,
-                          color: Colors.white,
-                          size: 80,
-                        ),
+                        child: setIconForMain(snapshot!.data!.weather!.first!.icon.toString()),
                       ),
                        Padding(
                         padding: EdgeInsets.only(top: 15),
@@ -151,6 +148,7 @@ class _MyAppState extends State<MyApp> {
                                   ),
                                 )
                               ],
+
                             ),
                           )
                         ],
@@ -325,6 +323,35 @@ class _MyAppState extends State<MyApp> {
         },
       ),
     );
+
+
+
+  }
+  Image setIconForMain(String iconCode){
+
+   switch(iconCode){
+     case "01d" : {return Image(image: AssetImage("images/01d@2x.png"));}
+     case "01n" : {return Image(image: AssetImage("images/01n@2x.png"));}
+     case "02d" : {return Image(image: AssetImage("images/02d@2x.png"));}
+     case "02n" : {return Image(image: AssetImage("images/02n@2x.png"));}
+     case "03d" : {return Image(image: AssetImage("images/03d@2x.png"));}
+     case "03n" : {return Image(image: AssetImage("images/03d@2x.png"));}
+     case "04d" : {return Image(image: AssetImage("images/04d@2x.png"));}
+     case "04n" : {return Image(image: AssetImage("images/04d@2x.png"));}
+     case "09d" : {return Image(image: AssetImage("images/09d@2x.png"));}
+     case "09n" : {return Image(image: AssetImage("images/09d@2x.png"));}
+     case "10d" : {return Image(image: AssetImage("images/10d@2x.png"));}
+     case "10n" : {return Image(image: AssetImage("images/10n@2x.png"));}
+     case "11d" : {return Image(image: AssetImage("images/11d@2x.png"));}
+     case "11n" : {return Image(image: AssetImage("images/11d@2x.png"));}
+     case "13d" : {return Image(image: AssetImage("images/13d@2x.png"));}
+     case "13n" : {return Image(image: AssetImage("images/13d@2x.png"));}
+     case "50d" : {return Image(image: AssetImage("images/50d@2x.png"));}
+     case "50n" : {return Image(image: AssetImage("images/50d@2x.png"));}
+     default : {return Image(image: AssetImage("images/01d@2x.png")); }
+
+
+   }
   }
 
   Future<CurrentCityDataModel> sendRequestCurrentWeather(String cityName) async {
@@ -339,4 +366,6 @@ class _MyAppState extends State<MyApp> {
         CurrentCityDataModel.fromJson(jsonDecode(response.toString()));
     return dataModel;
   }
+
+
 }
