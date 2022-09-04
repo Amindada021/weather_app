@@ -28,6 +28,7 @@ class _MyAppState extends State<MyApp> {
   late Future<CurrentCityDataModel> weatherData;
 
 
+
   @override
   void initState() {
     // TODO: implement initState
@@ -93,7 +94,7 @@ class _MyAppState extends State<MyApp> {
                       ),
                        Padding(
                         padding: EdgeInsets.only(top: 30),
-                        child: setIconForMain(snapshot!.data!.weather!.first!.icon.toString()),
+                        child: setIconForMain(snapshot!.data!.weather!.last!.icon.toString()),
                       ),
                        Padding(
                         padding: EdgeInsets.only(top: 15),
