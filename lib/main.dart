@@ -1,10 +1,13 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:ui';
-
 import 'package:course_b/model/curentCityDataModel.dart';
+import 'package:course_b/model/sixDaysWeather.dart';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
 
 void main() {
   runApp(const MaterialApp(
@@ -22,11 +25,14 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   var cityName = "tehran";
-  TextEditingController Controller = TextEditingController();
+  var lat  ;
+  var lon ;
+  var apikey = '02fb71550df66bc5f3fd1ef8953c2ad4';
 
+  TextEditingController Controller = TextEditingController();
+  late StreamController<List<SixDaysWeather>> streamController;
 
   late Future<CurrentCityDataModel> weatherData;
-
 
 
   @override
@@ -35,11 +41,15 @@ class _MyAppState extends State<MyApp> {
     super.initState();
     weatherData = sendRequestCurrentWeather(cityName);
 
+    streamController = StreamController<List<SixDaysWeather>>();
+
+
+
+
   }
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: AppBar(),
@@ -47,6 +57,7 @@ class _MyAppState extends State<MyApp> {
         future: weatherData,
         builder: (context, snapshot) {
           if (snapshot.hasData) {
+            sendRequestForSixDays(lat,lon);
             return Container(
               decoration: BoxDecoration(
                 image: DecorationImage(
@@ -80,23 +91,24 @@ class _MyAppState extends State<MyApp> {
                       ),
                       Padding(
                         padding: EdgeInsets.only(top: 50),
-                        child: Text("${snapshot.data?.name}"
-                          ,
+                        child: Text(
+                          "${snapshot.data?.name}",
                           style: TextStyle(color: Colors.white, fontSize: 35),
                         ),
                       ),
-                       Padding(
+                      Padding(
                         padding: EdgeInsets.only(top: 20.0),
                         child: Text(
-                            snapshot.data!.weather?.last?.description??"clear",
+                          snapshot.data!.weather?.last?.description ?? "clear",
                           style: TextStyle(color: Colors.grey),
                         ),
                       ),
-                       Padding(
+                      Padding(
                         padding: EdgeInsets.only(top: 30),
-                        child: setIconForMain(snapshot!.data!.weather!.last!.icon.toString()),
+                        child: setIconForMain(
+                            snapshot!.data!.weather!.last!.icon.toString()),
                       ),
-                       Padding(
+                      Padding(
                         padding: EdgeInsets.only(top: 15),
                         child: Text(
                           "${snapshot.data!.main!.temp!.toInt().round()}°",
@@ -107,7 +119,7 @@ class _MyAppState extends State<MyApp> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Column(
-                            children:  [
+                            children: [
                               Text(
                                 "Max",
                                 style:
@@ -134,7 +146,7 @@ class _MyAppState extends State<MyApp> {
                           Padding(
                             padding: const EdgeInsets.only(left: 10),
                             child: Column(
-                              children:  [
+                              children: [
                                 Text(
                                   "Min",
                                   style: TextStyle(
@@ -149,7 +161,6 @@ class _MyAppState extends State<MyApp> {
                                   ),
                                 )
                               ],
-
                             ),
                           )
                         ],
@@ -166,43 +177,27 @@ class _MyAppState extends State<MyApp> {
                           width: double.infinity,
                           height: 80,
                           child: Center(
-                            child: ListView.builder(
-                                shrinkWrap: true,
-                                itemCount: 6,
-                                scrollDirection: Axis.horizontal,
-                                itemBuilder: (context, index) => SizedBox(
-                                      width: 65,
-                                      height: 65,
-                                      child: Card(
-                                        elevation: 0,
-                                        color: Colors.transparent,
-                                        child: Padding(
-                                          padding: const EdgeInsets.only(
-                                              top: 5, left: 3, right: 3),
-                                          child: Column(
-                                            children: const [
-                                              Text(
-                                                "Fri . 8pm",
-                                                style: TextStyle(
-                                                    color: Colors.grey,
-                                                    fontSize: 13),
-                                              ),
-                                              Icon(
-                                                Icons.cloud_outlined,
-                                                color: Colors.white,
-                                                size: 30,
-                                              ),
-                                              Text(
-                                                "14°",
-                                                style: TextStyle(
-                                                    color: Colors.grey,
-                                                    fontSize: 15),
-                                              )
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    )),
+                            child: StreamBuilder<List<SixDaysWeather>>(
+                              stream: streamController.stream,
+                              builder: (context, snapshot) {
+                                if(snapshot.hasData){
+                                print(snapshot.data);
+                                      return ListView.builder(
+                                          shrinkWrap: true,
+                                          itemCount: 5,
+                                          scrollDirection: Axis.horizontal,
+                                          itemBuilder: (context, pos) => ListViewItem(snapshot.data![pos])
+
+                                      );
+                                }
+                                else{
+                                 return Center(
+                                    child: CircularProgressIndicator(),
+                                  );
+                                }
+                              },
+
+                            ),
                           )),
                       Padding(
                         padding: const EdgeInsets.only(top: 12, bottom: 12),
@@ -216,7 +211,7 @@ class _MyAppState extends State<MyApp> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Column(
-                            children:  [
+                            children: [
                               Padding(
                                 padding: EdgeInsets.only(bottom: 5),
                                 child: Text(
@@ -241,7 +236,7 @@ class _MyAppState extends State<MyApp> {
                             ),
                           ),
                           Column(
-                            children:  [
+                            children: [
                               Padding(
                                 padding: EdgeInsets.only(bottom: 5),
                                 child: Text(
@@ -249,10 +244,9 @@ class _MyAppState extends State<MyApp> {
                                   style: TextStyle(
                                       color: Colors.grey, fontSize: 12),
                                 ),
-                                
                               ),
                               Text(
-                                "${DateTime.fromMillisecondsSinceEpoch(snapshot.data!.sys!.sunrise!.toInt() *1000).toString().substring(10,16)} AM ",
+                                "${DateTime.fromMillisecondsSinceEpoch(snapshot.data!.sys!.sunrise!.toInt() * 1000).toString().substring(10, 16)} AM ",
                                 style: TextStyle(
                                     color: Colors.white, fontSize: 15),
                               )
@@ -267,7 +261,7 @@ class _MyAppState extends State<MyApp> {
                             ),
                           ),
                           Column(
-                            children:  [
+                            children: [
                               Padding(
                                 padding: EdgeInsets.only(bottom: 5),
                                 child: Text(
@@ -276,9 +270,8 @@ class _MyAppState extends State<MyApp> {
                                       color: Colors.grey, fontSize: 12),
                                 ),
                               ),
-
                               Text(
-                                "${DateFormat.jm().format(DateTime.fromMillisecondsSinceEpoch(snapshot.data!.sys!.sunset!.toInt() * 1000 ))} ",
+                                "${DateFormat.jm().format(DateTime.fromMillisecondsSinceEpoch(snapshot.data!.sys!.sunset!.toInt() * 1000))} ",
                                 style: TextStyle(
                                     color: Colors.white, fontSize: 15),
                               )
@@ -293,7 +286,7 @@ class _MyAppState extends State<MyApp> {
                             ),
                           ),
                           Column(
-                            children:  [
+                            children: [
                               Padding(
                                 padding: EdgeInsets.only(bottom: 5),
                                 child: Text(
@@ -324,49 +317,163 @@ class _MyAppState extends State<MyApp> {
         },
       ),
     );
-
-
-
-  }
-  Image setIconForMain(String iconCode){
-
-   switch(iconCode){
-     case "01d" : {return Image(image: AssetImage("images/01d@2x.png"));}
-     case "01n" : {return Image(image: AssetImage("images/01n@2x.png"));}
-     case "02d" : {return Image(image: AssetImage("images/02d@2x.png"));}
-     case "02n" : {return Image(image: AssetImage("images/02n@2x.png"));}
-     case "03d" : {return Image(image: AssetImage("images/03d@2x.png"));}
-     case "03n" : {return Image(image: AssetImage("images/03d@2x.png"));}
-     case "04d" : {return Image(image: AssetImage("images/04d@2x.png"));}
-     case "04n" : {return Image(image: AssetImage("images/04d@2x.png"));}
-     case "09d" : {return Image(image: AssetImage("images/09d@2x.png"));}
-     case "09n" : {return Image(image: AssetImage("images/09d@2x.png"));}
-     case "10d" : {return Image(image: AssetImage("images/10d@2x.png"));}
-     case "10n" : {return Image(image: AssetImage("images/10n@2x.png"));}
-     case "11d" : {return Image(image: AssetImage("images/11d@2x.png"));}
-     case "11n" : {return Image(image: AssetImage("images/11d@2x.png"));}
-     case "13d" : {return Image(image: AssetImage("images/13d@2x.png"));}
-     case "13n" : {return Image(image: AssetImage("images/13d@2x.png"));}
-     case "50d" : {return Image(image: AssetImage("images/50d@2x.png"));}
-     case "50n" : {return Image(image: AssetImage("images/50d@2x.png"));}
-     default : {return Image(image: AssetImage("images/01d@2x.png")); }
-
-
-   }
   }
 
-  Future<CurrentCityDataModel> sendRequestCurrentWeather(String cityName) async {
-    var apikey = '02fb71550df66bc5f3fd1ef8953c2ad4';
+  Image setIconForMain(String iconCode) {
+    switch (iconCode) {
+      case "01d":
+        {
+          return Image(image: AssetImage("images/01d@2x.png"));
+        }
+      case "01n":
+        {
+          return Image(image: AssetImage("images/01n@2x.png"));
+        }
+      case "02d":
+        {
+          return Image(image: AssetImage("images/02d@2x.png"));
+        }
+      case "02n":
+        {
+          return Image(image: AssetImage("images/02n@2x.png"));
+        }
+      case "03d":
+        {
+          return Image(image: AssetImage("images/03d@2x.png"));
+        }
+      case "03n":
+        {
+          return Image(image: AssetImage("images/03d@2x.png"));
+        }
+      case "04d":
+        {
+          return Image(image: AssetImage("images/04d@2x.png"));
+        }
+      case "04n":
+        {
+          return Image(image: AssetImage("images/04d@2x.png"));
+        }
+      case "09d":
+        {
+          return Image(image: AssetImage("images/09d@2x.png"));
+        }
+      case "09n":
+        {
+          return Image(image: AssetImage("images/09d@2x.png"));
+        }
+      case "10d":
+        {
+          return Image(image: AssetImage("images/10d@2x.png"));
+        }
+      case "10n":
+        {
+          return Image(image: AssetImage("images/10n@2x.png"));
+        }
+      case "11d":
+        {
+          return Image(image: AssetImage("images/11d@2x.png"));
+        }
+      case "11n":
+        {
+          return Image(image: AssetImage("images/11d@2x.png"));
+        }
+      case "13d":
+        {
+          return Image(image: AssetImage("images/13d@2x.png"));
+        }
+      case "13n":
+        {
+          return Image(image: AssetImage("images/13d@2x.png"));
+        }
+      case "50d":
+        {
+          return Image(image: AssetImage("images/50d@2x.png"));
+        }
+      case "50n":
+        {
+          return Image(image: AssetImage("images/50d@2x.png"));
+        }
+      default:
+        {
+          return Image(image: AssetImage("images/01d@2x.png"));
+        }
+    }
+  }
 
+  SizedBox ListViewItem(SixDaysWeather sixDaysWeather ){
+    return SizedBox(
+      width: 65,
+      height: 65,
+      child: Card(
+        elevation: 0,
+        color: Colors.transparent,
+        child: Padding(
+          padding: const EdgeInsets.only(
+              top: 5, left: 3, right: 3),
+          child: Column(
+            children:  [
+              Text(
+                "${DateFormat.MMMd().format(DateTime.fromMillisecondsSinceEpoch(sixDaysWeather!.dataTime.toInt() * 1000))}",
+                style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 13),
+              ),
+              Expanded(child: setIconForMain(sixDaysWeather.icon)),
+              Text(
+                "${sixDaysWeather.temp.round()}°",
+                style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 15),
+              )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<CurrentCityDataModel> sendRequestCurrentWeather(
+      String cityName) async {
     var response = await Dio().get(
         "https://api.openweathermap.org/data/2.5/weather?q=${cityName}&appid=${apikey}&units=metric");
     print(response.data);
     print(response.statusCode);
+    lat = response.data["coord"]["lat"];
+    lon = response.data["coord"]["lon"];
 
-    var dataModel =
-        CurrentCityDataModel.fromJson(jsonDecode(response.toString()));
-    return dataModel;
+    var dataModel = CurrentCityDataModel.fromJson(jsonDecode(response.toString()));
+
+
+    return dataModel ;
+
   }
 
+  void sendRequestForSixDays(lat,lon) async {
+    try{
+      List<SixDaysWeather> list = [];
 
+      var response = await Dio().get(
+          "https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${apikey}&units=metric&cnt=40");
+
+
+      for(int i = 0;i<40;i+=8){
+        var model = response.data["list"][i];
+
+
+        var datamodel = SixDaysWeather(model["dt"], model["main"]["temp"], model["weather"][0]["icon"]);
+
+        list.add(datamodel);
+      }
+
+
+      streamController.add(list);
+
+    }
+    on DioError catch (e){
+      print(e.response!.statusCode);
+      print(e.message);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("there is an")));
+    }
+
+  }
 }
