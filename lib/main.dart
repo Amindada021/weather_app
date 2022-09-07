@@ -24,7 +24,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  var cityName = "tehran";
+  var cityName = "london";
   var lat  ;
   var lon ;
   var apikey = '02fb71550df66bc5f3fd1ef8953c2ad4';
@@ -77,12 +77,18 @@ class _MyAppState extends State<MyApp> {
                             Padding(
                               padding: const EdgeInsets.only(right: 12),
                               child: ElevatedButton(
-                                  onPressed: () {}, child: Text("Find")),
+                                  onPressed: () {
+                                    setState(() {
+                                     weatherData = sendRequestCurrentWeather(Controller.text);
+                                    });
+                                  }, child: Text("Find")),
                             ),
                             Expanded(
                               child: TextField(
                                 controller: Controller,
+                                style: TextStyle(color: Colors.white),
                                 decoration: InputDecoration(
+                                  hintStyle: TextStyle(color: Colors.white),
                                     border: UnderlineInputBorder()),
                               ),
                             )
